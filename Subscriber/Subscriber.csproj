@@ -3,13 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
-    <RootNamespace>Redis_POC</RootNamespace>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="NRediSearch" Version="2.2.79" />
-    <PackageReference Include="StackExchange.Redis" Version="2.6.70" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Common\Common.csproj" />

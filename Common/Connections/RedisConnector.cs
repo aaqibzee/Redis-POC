@@ -14,7 +14,7 @@ namespace Redis_POC.Connections
             });
         }
 
-        private static ConnectionMultiplexer Connection
+        public static ConnectionMultiplexer Connection
         {
             get
             {
@@ -22,10 +22,14 @@ namespace Redis_POC.Connections
             }
         }
 
-
-        public static IDatabase GetCache()
+        public static IDatabase GetDatabase()
         {
                 return Connection.GetDatabase();
+        }
+
+        public static ISubscriber GetSubscriber()
+        {
+            return Connection.GetSubscriber();
         }
     }
 }
