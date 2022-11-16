@@ -1,4 +1,5 @@
-﻿using Redis_POC.Connections;
+﻿using Common;
+using Redis_POC.Connections;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
@@ -8,13 +9,11 @@ namespace Redis_POC.Handlers
 {
     public static class ReadWriteHandler
     {
-        private static int devicesCount = 5000;
-
         public static  async Task Read()
         {
             Console.WriteLine("Reading data..");
             var db = RedisConnector.GetDatabase();
-            for (int i = 1; i <= devicesCount; i++)
+            for (int i = 1; i <= Constants.DevicesCount; i++)
             {
                 var value = await db.HashGetAllAsync($"Device:{i}");
                 Console.WriteLine($"Key: Device:{i} Value: { value[0]} {value[1]} {value[2]}"); 
@@ -42,11 +41,11 @@ namespace Redis_POC.Handlers
             var random = new Random();
             var db = RedisConnector.GetDatabase();
 
-            for (int i = 1; i <= devicesCount; i++)
+            for (int i = 1; i <= Constants.DevicesCount; i++)
             {
                 var brand = brands[random.Next(0, brands.Count-1)];
                 var model = brand[0].ToString()+ random.Next(100, 500);
-                var price = random.Next(500, 1000);
+                var price = random.Next(Constants.PriceLowerRange, Constants.PriceUpperRange);
 
                 await db.HashSetAsync($"Device:{i}", new HashEntry[] 
                 { 

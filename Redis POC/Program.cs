@@ -9,63 +9,79 @@ namespace Redis_POC
 {
     class Program
     {
-        private static int mode = 4;
+
         static async Task Main(string[] args)
         {
-            // Mode:
-            // 1 for read and write
-            // 2 for Search
-            // 3 for pub/sub 
-            // 4 for test stream
-
             Console.WriteLine("Welcome to Device Managment System");
+            int mode = SelectMenu();
+
+            
             switch (mode)
             {
-                case 0:
+                case 1:
                     {
                         await PopulateData();
                         break;
                     }
-                case 1:
+                case 2:
                     {
                         await PrintData();
                         break;
                     }
-                case 2:
+                case 3:
                     {
                         await ManageSearch();
                         break;
                     }
-                case 3:
+                case 4:
                     {
                         await ManageCommunication();
                         break;
                     }
-                case 4:
+                case 5:
                     {
                         await ManageStreamAsync();
                         break;
                     }
                 default:
                     break;
-            }
 
+            }
             Console.ReadKey();
         }
-       
+
+        private static int SelectMenu()
+        {
+
+            Console.WriteLine("\nSelect from the menu \n1 For populating the data \n2 For listing the saved data " +
+                "\n3 For Searching the data \n4 For doing communication \n5 For watching price update stream");
+
+            var input = Console.ReadKey().Key;
+            if (!(input > ConsoleKey.NumPad0 && input <= ConsoleKey.NumPad5))
+            {
+                Console.WriteLine("\nInvalid selection, choose the right option");
+                SelectMenu();
+            }
+
+            return ConvertConsoleKeyToInt(input);
+        }
+
         public static async Task PopulateData()
         {
+            Console.WriteLine("\nRunning Populate Data Module Now");
             await ReadWriteHandler.PopulateData();
 
         }
 
         public static async Task PrintData()
         {
+            Console.WriteLine("\nRunning Read Data Module Now");
             await ReadWriteHandler.Read();
         }
 
         public static async Task ManageSearch()
         {
+            Console.WriteLine("\nRunning Search Module Now");
             await SearchHandler.CreateIndexes();
             Console.WriteLine("\nPress \n1 for search by Brand \n2 for search by Model  \n3 for Search by Price");
 
@@ -163,9 +179,24 @@ namespace Redis_POC
             return;
         }
 
-        public static async Task ManageStreamAsync()
+        private static async Task ManageStreamAsync()
         {
-            await StreamHandler.ManageStreamAsync();
+            Console.WriteLine("\nRunning Stream Module Now");
+            await StreamHandler.PublishDeviceUpdateStreamAsync();
+        }
+
+        private static int ConvertConsoleKeyToInt(ConsoleKey key)
+        {
+            if(key==ConsoleKey.NumPad1)
+                return 1;
+           if(key==ConsoleKey.NumPad2)
+                return 2;
+           if(key==ConsoleKey.NumPad3)
+                return 3;
+           if(key==ConsoleKey.NumPad4)
+                return 4;
+           else
+                return 5;
         }
     }
 }

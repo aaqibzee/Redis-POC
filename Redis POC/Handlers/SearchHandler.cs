@@ -10,7 +10,6 @@ namespace Redis_POC.Handlers
     internal class SearchHandler
     {
         private static string indexName = "device-index";
-
         private static IDatabase db = RedisConnector.GetDatabase();
         private static Client searchClient = new Client(indexName, db);
 
