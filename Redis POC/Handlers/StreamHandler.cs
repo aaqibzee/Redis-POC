@@ -21,19 +21,22 @@ namespace Redis_POC.Handlers
             const string groupName = "device-price-update-group";
 
             //Create strem and consumer group
-            if (!(await db.KeyExistsAsync(streamName))
-                || (await db.StreamGroupInfoAsync(streamName)).All(x => x.Name != groupName))
-            {
-                await db.StreamCreateConsumerGroupAsync(streamName, groupName, "0-0", true);
-            }
+            //if (!(await db.KeyExistsAsync(streamName))
+            //    || (await db.StreamGroupInfoAsync(streamName)).All(x => x.Name != groupName))
+            //{
+            //    await db.StreamCreateConsumerGroupAsync(streamName, groupName, "0-0", true);
+            //}
 
-            Task producerTask = PublishDeviceUpdateStream(db, streamName, token);
-            Task streamReadTask = ReadDeviceUpdateStream(db, streamName, token);
+            Task streamReadTask = ReadUserUpdateStream(db, streamName, token);
+
+            //Task producerTask = PublishDeviceUpdateStream(db, streamName, token);
+            //Task streamReadTask = ReadDeviceUpdateStream(db, streamName, token);
+
             //Task consumerGroupReadTaskA = ReadDeviceUpdateStreamAsGroupConsumer(db, streamName, groupName, "group-a-consumer-1", token);
             //Task consumerGroupReadTaskB = ReadDeviceUpdateStreamAsGroupConsumer(db, streamName, groupName, "group-a-consumer-2", token);
 
             //Run for only x seconds
-            tokenSource.CancelAfter(TimeSpan.FromSeconds(3));
+            tokenSource.CancelAfter(TimeSpan.FromSeconds(20));
             //await Task.WhenAll(producerTask, streamReadTask);
             //await Task.WhenAll(producerTask, consumerGroupReadTaskA, consumerGroupReadTaskB);
             //await Task.WhenAll(producerTask, streamReadTask, consumerGroupReadTaskA, consumerGroupReadTaskB);
@@ -82,6 +85,31 @@ namespace Redis_POC.Handlers
                     }
 
                     await Task.Delay(1000);
+                }
+            });
+            return readTask;
+        }
+
+        private static Task ReadUserUpdateStream(IDatabase db, string streamName, CancellationToken token)
+        {
+            streamName = "User-Update-Output";
+            string deviceId;
+            var readTask = Task.Run(async () =>
+            {
+                while (!token.IsCancellationRequested)
+                {
+                    // '-' means lowest id, and '+' means highest id
+                    var result = await db.StreamRangeAsync(streamName, "-", "+", 1, Order.Descending);
+                    if (result.Any())
+                    {
+                        var dict = ParseResult(result.First());
+                        foreach (var item in dict)
+                        {
+                            Console.WriteLine($"Key: {item.Key} Value: {item.Value}");
+                        }
+                    }
+
+                    await Task.Delay(5000);
                 }
             });
             return readTask;
