@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Redis_POC.Connections
+namespace Common.Connections
 {
     public class RedisConnector
     {

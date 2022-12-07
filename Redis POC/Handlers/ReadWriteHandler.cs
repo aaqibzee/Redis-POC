@@ -1,5 +1,5 @@
 ﻿using Common;
-using Redis_POC.Connections;
+using Common.Connections;
 using StackExchange.Redis;
 using System;
 using System.Collections.Generic;

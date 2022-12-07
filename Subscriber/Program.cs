@@ -1,13 +1,48 @@
-﻿using Redis_POC.Connections;
-using System;
+﻿using System;
 using Common;
 using System.Threading.Tasks;
 using StackExchange.Redis;
 using System.Collections.Generic;
 using System.Linq;
+using Common.Connections;
+using ServiceStack;
+using Newtonsoft.Json;
 
 namespace Subscriber
 {
+     public class StreamValue
+    {
+        public Customer Current { get; set; }
+        public Customer Previous { get; set; }
+        public string Type { get; set; }
+    }
+    public struct GeoLoc
+    {
+        public double Longitude {get; set;}
+        public double Latitude {get; set;}
+    }
+
+    public partial class Address
+    {
+        public string StreetName { get; set; }
+        public string ZipCode { get; set; }
+        public string City { get; set; }
+        public string State { get; set; }
+        public Address ForwardingAddress { get; set; }
+        public GeoLoc Location { get; set; }
+        public int HouseNumber { get; set; }
+    }
+    public class Customer
+    {
+        public string Id { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string Email { get; set; }
+        public int Age { get; set; }
+        public string[] NickNames { get; set; }
+        public Address Address { get; set; }
+        public Address AddressAlternate { get; set; }
+    }
     internal class Program
     {
         static void Main(string[] args)
@@ -17,9 +52,58 @@ namespace Subscriber
             //SubscribeToDemoDeviceCommunicationChannel();
             //SubscribeACutomeKeySpaceEventNotifications();
             //SubscribeAllKeySpaceEventNotifications();
-            SubscribeUserDataUpdateNotifications();
+            //SubscribeUserDataUpdateNotifications();
+            SubscribeTypeUpdateNotifications<Customer>(new Customer());
+
             Console.ReadLine();
         }
+        /// <summary>
+        /// Listens to User Output Update Stream notifications
+        /// </summary>
+        private static void SubscribeTypeUpdateNotifications<T>(T type)
+        {
+            string streamName =typeof(T).Name+ "-Output";
+            Console.WriteLine("Listening " + streamName);
+
+            var subscriber = RedisConnector.GetSubscriber();
+            var keyspace = "__keyspace@0__:" + streamName;
+            subscriber.Subscribe(keyspace, (channel, message)
+            =>
+            {
+                ReadTypeUpdateStream<T>(type, streamName);
+            });
+        }
+
+        /// <summary>
+        /// Reads data from the stream 
+        /// </summary>
+        private static void ReadTypeUpdateStream<T>(T type, string streamNaem)
+        {
+            var db = RedisConnector.GetDatabase();
+
+            // '-' means lowest id, and '+' means highest id
+            var result = db.StreamRange(streamNaem, "-", "+", 1, Order.Descending);
+
+            if (result.Any())
+            {
+                var dict = ParseResult(result.First());
+                DeserializeAndPrintData(dict.ElementAt(0).Key,dict.ElementAt(0).Value);
+            }
+        }
+
+        private static void DeserializeAndPrintData(string key, string jsonValue)
+        {
+            object obj="";
+            lock(obj)
+            {
+                var res = JsonConvert.DeserializeObject<StreamValue>(jsonValue);
+                Console.WriteLine($"\nKey:{key} Type: {res.Type}");
+                if (res.Previous != null)
+                Console.WriteLine($"\nPrevious:\nID:{res.Previous.Id}  \nFirst Name: {res.Previous.FirstName} \nLastName: {res.Previous.LastName} \nEmail: {res.Previous.Email} \nCity: {res.Previous.Address.City}");
+                Console.WriteLine($"\nCurrent:\nID:{res.Current.Id} \nFirst Name: {res.Current.FirstName} \nLastName: {res.Current.LastName} \nEmail: {res.Current.Email} \nCity: {res.Current.Address.City}");
+            }
+        }
+
         private static void SubscribeToDemoDeviceCommunicationChannel()
         {
             Console.WriteLine("Listening " + Constants.DeviceManagementChannle);
@@ -27,8 +111,8 @@ namespace Subscriber
             var subscriber = RedisConnector.GetSubscriber();
             subscriber.Subscribe(Constants.DeviceManagementChannle, (channel, message)
                  => Console.Write("\nMessage received in: " + Constants.DeviceManagementChannle + " " + message));
-
         }
+        
         /// <summary>
         /// Listens to User Output Update Stream notifications
         /// </summary>
@@ -59,12 +143,13 @@ namespace Subscriber
         /// <summary>
         /// Enables key space notifciaitons for the given key in input
         /// </summary>
-        private static async Task SubscribeACutomeKeySpaceEventNotifications()
+        private static async Task SubscribeToCustomerKeySpaceEventNotifications()
         {
             Console.WriteLine("Enter the key to monitor");
             var key = Console.ReadLine();
             var keyspace = "__keyspace@0__:" + key;
             Console.WriteLine($"Listening to keyspace {keyspace} for {key}");
+
             var subscriber = RedisConnector.GetSubscriber();
             var db = RedisConnector.GetDatabase();
             string previousValueKey = "prvs" + Reverse(key);

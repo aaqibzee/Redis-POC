@@ -4,6 +4,7 @@ using Redis_POC.Handlers;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Common.Handlers;
 
 namespace Redis_POC
 {
@@ -41,6 +42,11 @@ namespace Redis_POC
                 case 5:
                     {
                         await ManageStreamAsync();
+                        break;
+                    }
+                case 6:
+                    {
+                        await ManageKeySpaceNotification();
                         break;
                     }
                 default:
@@ -144,6 +150,28 @@ namespace Redis_POC
         private static async Task ManageCommunication()
         {
             Console.WriteLine("\nType mesage to send:");
+            await Publisher.SendMessageAsync(Console.ReadLine(), Constants.DeviceManagementChannle);
+
+            Console.WriteLine("\nPress R to send another message or any pther key to exit");
+            if (Console.ReadKey().Key == ConsoleKey.R)
+            {
+                Console.WriteLine();
+                await ManageCommunication();
+            }
+        }
+        private static async Task ManageKeySpaceNotification()
+        {
+            Console.WriteLine("\nEnter the brand name");
+            var brand = Console.ReadLine();
+
+            Console.WriteLine("\nEnter the model name");
+            var model = Console.ReadLine();
+
+            Console.WriteLine("\nPrice");
+            var price = Console.ReadLine();
+
+
+            Console.WriteLine("\nType the Id to to send:");
             await Publisher.SendMessageAsync(Console.ReadLine(), Constants.DeviceManagementChannle);
 
             Console.WriteLine("\nPress R to send another message or any pther key to exit");
